@@ -83,7 +83,7 @@ int main(int argc, char** argv)
 		else if (strcmp(array[0], "alloc") == 0){
 			int i = 0;
 			int j = 0;
-
+			int success = 0;
 			while (i < 16){
 				if (main_array[i].is_occupied1 == 0){	
 					while (j < 4){
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
 
 							sscanf(buff3, "%d", &warehouse_index);
 							printf("Message from server...%d\n", warehouse_index);
-						
+							success = 1;
 							main_array[i].pointSecond[j].physical_address = warehouse_index;
 							main_array[i].pointSecond[j].is_occupied2 = 1;
 							
@@ -114,34 +114,106 @@ int main(int argc, char** argv)
 					break;
 				}
 				i++;
-			}	   			
+			}
+			if (success == 0){
+				fprintf(stderr, "You are out of space\n");
+			} 			
 		}
 
 		else if (strcmp(array[0], "dealloc") == 0){
 			int dealloc_id;
 			
-			sscanf(input_line, "%d", &dealloc_id);
+			sscanf(input_line, "%*s %d", &dealloc_id);
 			
 			if (dealloc_id < 0){
-				fprintf(stderr, "Dealloc ID is invalid");
+				fprintf(stderr, "Dealloc ID is invalid\n");
 			}
-			
-			dealloc_id = dealloc_id << 26;
 			int dealloc_temp = dealloc_id;
 			dealloc_temp &= 3;
 			int second_level = dealloc_temp;
-
-
+		
 			dealloc_temp = dealloc_id;
+			dealloc_temp = dealloc_temp >> 2;
 			
-				
-					
-	
+			int first_level = dealloc_temp;				
+			
+			main_array[first_level].pointSecond[second_level].is_occupied2 = 0;
 
+			if (main_array[first_level].is_occupied1 == 1){
+				main_array[first_level].is_occupied1 = 0;
+			}
+			
+			char buff2[100];
+			int warehouse_id = main_array[first_level].pointSecond[second_level].physical_address;
+			sprintf(buff2, "Dealloc %d", warehouse_id);
+			printf("Writing to server: %s\n", buff2);
+			write(server_fifo, buff2, 100*sizeof(char));
+									
+		}
+		else if (strcmp(array[0], "read") == 0){
+			int read_id;
+			
+			sscanf(input_line, "%*s %d", &read_id);
+
+			if (read_id < 0){
+				fprintf(stderr, "Read ID is invalid\n");
+			}
+	
+			int read_temp = read_id;
+			read_temp &= 3;
+			int second_level = read_temp;
+
+			read_temp = read_id;
+			read_temp = read_temp >> 2;
+
+			int first_level = read_temp;
+			
+			char buff2[100];
+			char buff4[100];
+			int physical_address = main_array[first_level].pointSecond[second_level].physical_address;
+			sprintf(buff2, "Read %d", physical_address);
+			printf("Writing to server read: %s\n", buff2);
+			write(server_fifo, buff2, 100*sizeof(char));
+			read(client_fifo, buff4, 100*sizeof(char));
+			printf("Recieve message from server: %s\n", buff4);			
 
 		}
-		else if (strcmp(array[0], "read") == 0){}
-		else if (strcmp(array[0], "store") == 0){}
+		else if (strcmp(array[0], "store") == 0){
+			int store_id; 
+			char store_array[50];
+
+			sscanf(input_line, "%*s %d \"%[^\"]\"", &store_id, store_array);
+			
+			if (store_id < 0){
+				fprintf(stderr, "Store ID is invalid\n");
+			}
+
+			printf("Store ID: %d\n", store_id);
+			printf("Store Array: %s\n", store_array);
+
+			int store_temp = store_id;
+                        store_temp &= 3;
+                        int second_level = store_temp; 
+                        store_temp = store_id;
+                        store_temp = store_temp >> 2;
+                        int first_level = store_temp;
+
+			printf("First Level: %d\n", first_level);
+			printf("Second Level: %d\n", second_level);
+
+			char buff5[100];
+			if (main_array[first_level].pointSecond[second_level].is_occupied2 == 1){
+				int physical_address = main_array[first_level].pointSecond[second_level].physical_address;
+				sprintf(buff5, "Store %d %s", physical_address, store_array);
+				printf("Writing to server (store)...%s\n", buff5);
+				write(server_fifo, buff5, 100*sizeof(char));
+			}
+			else{
+				fprintf(stderr, "Unoccupied store\n");
+			}
+		
+	
+		}
 		else if (strcmp(array[0], "close") == 0){
 			thread_close = 0;
 		}

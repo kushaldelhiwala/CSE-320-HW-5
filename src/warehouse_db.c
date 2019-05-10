@@ -71,6 +71,35 @@ int main(int argc, char** argv)
 				}
 			} 	
 		}
+
+		if (strcmp(operation, "Dealloc") == 0){
+			int dealloc_id;
+			printf("Recieved Dealloc Message!\n");
+			sscanf(buffer1, "%*s %d", &dealloc_id);
+			warehouse[dealloc_id].is_valid = 0;
+		}
+	
+		if (strcmp(operation, "Read") == 0){
+			int read_id;
+			char buff3[100];
+			printf("Recieved Read Message!\n");
+			sscanf(buffer1, "%*s %d", &read_id);
+			sprintf(buff3, "%s", warehouse[read_id].attr_name);
+			printf("Writing to client...\n");
+			write(client_fifo1, buff3, 100*sizeof(char));
+		
+		}
+		
+		if (strcmp(operation, "Store") == 0){
+			int store_id; 
+			char buff4[100];
+			printf("Recieved Store Message!\n");
+			sscanf(buffer1, "%*s %s %d", buff4, &store_id);
+			if (warehouse[store_id].is_valid == 1){
+				strcpy(warehouse[store_id].attr_name, buff4);
+				printf("Store Complete!...stored %s", warehouse[store_id].attr_name);
+			}
+		}	
 		
 	}
 
