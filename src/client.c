@@ -17,15 +17,14 @@ char *strlwr(char *str);
 void *shell_start(void *vargp);
 
 typedef struct level_two{
-	int two_occupied; 
 	int physical_address;
+	int is_occupied2;
 
 }level_two;
 
 typedef struct level_one{
-	int one_occupied;
 	level_two pointSecond[4];
-
+	int is_occupied1;
 }level_one;
 
 
@@ -38,7 +37,15 @@ int main(int argc, char** argv)
 	char command[255];
 	char input_find[255];
 	int exit_flag = 0;
-	level_one main_array[16];	
+	level_one main_array[16];
+
+	for (int i = 0; i < 16; i++){
+		main_array[i].is_occupied1 = 0;
+		
+		for (int j = 0; j < 4; j++){
+			main_array[i].pointSecond[j].is_occupied2 = 0;
+		}
+	}	
 	
 	int server_fifo;
 	int client_fifo;
@@ -59,20 +66,80 @@ int main(int argc, char** argv)
 		array[0] = strlwr(array[0]);
 
 		if (strcmp(array[0], "start") == 0){
-			pthread_t thread_id; 
-			pthread_create(&thread_id, NULL, shell_start, NULL);
-			printf("THREAD ID CLIENT: %ld\n", thread_id);
-			char buf1 [100];
-		
-			sprintf(buf1, "Thread %ld", thread_id);
-			printf("BUFFER 1: %s\n", buf1);
-			write(server_fifo, buf1,100*sizeof(char)); 		
+			if (start_control == 1){
+				fprintf(stderr, "You cannot start multiple times\n");
+			}
+			else{
+				pthread_t thread_id; 
+				pthread_create(&thread_id, NULL, shell_start, NULL);
+				char buf1 [100];
+					
+				sprintf(buf1, "Thread %ld", thread_id);
+				printf("Writing to Server:  %s\n", buf1);
+				write(server_fifo, buf1,100*sizeof(char)); 	
+				start_control++;	
+			}
 		}
 		else if (strcmp(array[0], "alloc") == 0){
-			   					
+			int i = 0;
+			int j = 0;
+
+			while (i < 16){
+				if (main_array[i].is_occupied1 == 0){	
+					while (j < 4){
+						if(main_array[i].pointSecond[j].is_occupied2 == 0){
+							char buff2[100];
+							char buff3[100];
+							int warehouse_index;
+
+							sprintf(buff2, "Alloc");
+							printf("Writing alloc to server...\n");
+							write(server_fifo, buff2, 100*sizeof(char));
+							read(client_fifo, buff3, 100*sizeof(char));
+
+							sscanf(buff3, "%d", &warehouse_index);
+							printf("Message from server...%d\n", warehouse_index);
+						
+							main_array[i].pointSecond[j].physical_address = warehouse_index;
+							main_array[i].pointSecond[j].is_occupied2 = 1;
+							
+							if (j == 3){
+								main_array[i].is_occupied1 = 1;
+	
+							}
+							break;
+						}	
+						j++;
+					}
+					break;
+				}
+				i++;
+			}	   			
+		}
+
+		else if (strcmp(array[0], "dealloc") == 0){
+			int dealloc_id;
+			
+			sscanf(input_line, "%d", &dealloc_id);
+			
+			if (dealloc_id < 0){
+				fprintf(stderr, "Dealloc ID is invalid");
+			}
+			
+			dealloc_id = dealloc_id << 26;
+			int dealloc_temp = dealloc_id;
+			dealloc_temp &= 3;
+			int second_level = dealloc_temp;
+
+
+			dealloc_temp = dealloc_id;
+			
+				
+					
+	
+
 
 		}
-		else if (strcmp(array[0], "dealloc") == 0){}
 		else if (strcmp(array[0], "read") == 0){}
 		else if (strcmp(array[0], "store") == 0){}
 		else if (strcmp(array[0], "close") == 0){
