@@ -31,7 +31,14 @@ typedef struct level_one{
 
 int main(int argc, char** argv)
 {
-
+	if (argc != 2){
+		printf("You need to specify a unique client number (1-4)\n");
+		return -1;
+	}
+	
+	char *client_input = *(argv + 1);
+	client = atoi(client_input);
+	
 	char input_line[255];
 	char* found;
 	char* array[100];
@@ -53,10 +60,30 @@ int main(int argc, char** argv)
 	int server_fifo;
 	int client_fifo;
 	int start_control = 0;
+	
+	if (client == 1){
+		server_fifo = open("fifo_server1", O_RDWR);
+		client_fifo = open("fifo_client1", O_RDWR);
+	}
 
-	server_fifo = open("fifo_server1", O_RDWR);
-	client_fifo = open("fifo_client1", O_RDWR);
-		
+	else if (client == 2){
+		server_fifo = open("fifo_server2", O_RDWR);
+		client_fifo = open("fifo_client2", O_RDWR);
+	}
+
+	else if (client == 3){
+		server_fifo = open("fifo_server3", O_RDWR);
+		client_fifo = open("fifo_client3", O_RDWR);
+	}
+
+	/*else if (client == 4){
+		server_fifo = open("fifo_server4", O_RDWR);
+		client_fifo = open("fifo_client4", O_RDWR);
+	}*/	
+	else{
+		fprintf(stderr, "Please enter a FIFO from 1-4\n");
+	}
+
 	do{
 		printf("shell> ");
 		fgets(input_line, 255, stdin);
