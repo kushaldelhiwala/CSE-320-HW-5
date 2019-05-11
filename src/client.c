@@ -76,10 +76,10 @@ int main(int argc, char** argv)
 		client_fifo = open("fifo_client3", O_RDWR);
 	}
 
-	/*else if (client == 4){
+	else if (client == 4){
 		server_fifo = open("fifo_server4", O_RDWR);
 		client_fifo = open("fifo_client4", O_RDWR);
-	}*/	
+	}	
 	else{
 		fprintf(stderr, "Please enter a FIFO from 1-4\n");
 	}
@@ -100,12 +100,11 @@ int main(int argc, char** argv)
 				fprintf(stderr, "You cannot start multiple times\n");
 			}
 			else{
-				//pthread_t thread_id; 
 				pthread_create(&thread_id, NULL, shell_start, NULL);
 				char buf1 [100];
 					
 				sprintf(buf1, "Thread %ld", thread_id);
-				printf("Writing to Server:  %s\n", buf1);
+				printf("Session is now active\n");
 				write(server_fifo, buf1,100*sizeof(char)); 	
 				start_control++;	
 			}
@@ -127,12 +126,15 @@ int main(int argc, char** argv)
 								int warehouse_index;
 
 								sprintf(buff2, "Alloc");
-								printf("Writing alloc to server...\n");
+								printf("Allocating space...\n");
 								write(server_fifo, buff2, 100*sizeof(char));
 								read(client_fifo, buff3, 100*sizeof(char));
 
 								sscanf(buff3, "%d", &warehouse_index);
-								printf("Message from server...%d\n", warehouse_index);
+								int local_id = i;
+								local_id = local_id << 4;
+								local_id|= j;
+								printf("Allocation Complete! Local ID: %d will be stored at Warehouse Index: %d\n", local_id, warehouse_index);
 								success = 1;
 								main_array[i].pointSecond[j].physical_address = warehouse_index;
 								main_array[i].pointSecond[j].is_occupied2 = 1;
@@ -189,8 +191,9 @@ int main(int argc, char** argv)
 				char buff2[100];
 				int warehouse_id = main_array[first_level].pointSecond[second_level].physical_address;
 				sprintf(buff2, "Dealloc %d", warehouse_id);
-				printf("Writing to server: %s\n", buff2);
+				printf("Deallocing started\n");
 				write(server_fifo, buff2, 100*sizeof(char));
+				printf("Dealling complete\n");
 			}						
 		}
 		else if (strcmp(array[0], "read") == 0){
@@ -219,10 +222,10 @@ int main(int argc, char** argv)
 				char buff4[100];
 				int physical_address = main_array[first_level].pointSecond[second_level].physical_address;
 				sprintf(buff2, "Read %d", physical_address);
-				printf("Writing to server read: %s\n", buff2);
+				printf("Reading from server...\n");
 				write(server_fifo, buff2, 100*sizeof(char));
 				read(client_fifo, buff4, 100*sizeof(char));
-				printf("Recieve message from server: %s\n", buff4);			
+				printf("Art Entry at %d is: %s\n", read_id ,buff4);			
 			}
 		}
 		else if (strcmp(array[0], "store") == 0){
@@ -244,9 +247,6 @@ int main(int argc, char** argv)
 				strcat(temp_array, store_array);
 				strcat(temp_array, "\"");
 			
-				printf("Store ID: %d\n", store_id);
-				printf("Store Array: %s\n", temp_array);
-
 				int store_temp = store_id;
                         	store_temp &= 3;
                         	int second_level = store_temp; 
@@ -254,15 +254,16 @@ int main(int argc, char** argv)
                         	store_temp = store_temp >> 2;
                         	int first_level = store_temp;
 
-				printf("First Level: %d\n", first_level);
-				printf("Second Level: %d\n", second_level);
-
 				char buff5[100];
+				char buff6[100];
 				if (main_array[first_level].pointSecond[second_level].is_occupied2 == 1){
 					int physical_address = main_array[first_level].pointSecond[second_level].physical_address;
 					sprintf(buff5, "Store %d %s", physical_address, temp_array);
-					printf("Writing to server (store)...%s\n", buff5);
+					//printf("Storing in server...%s\n", temp_array);
+					printf("BUFF 5: %s\n", buff5);
 					write(server_fifo, buff5, 100*sizeof(char));
+					read(client_fifo, buff6, 100*sizeof(char));
+					printf("%s", buff6);
 				}
 				else{
 					fprintf(stderr, "Unoccupied store\n");
@@ -279,11 +280,13 @@ int main(int argc, char** argv)
 					main_array[i].pointSecond[j].physical_address = -1;
 				}
 			}
-
+			
 			sprintf(buf5, "Close %ld", thread_id);
 			write(server_fifo, buf5, 100*sizeof(char));
 			thread_close = 0;
 			start_control--;
+			sleep(1);
+			printf("Your session has been closed. Thank you!\n");
 						
 		}		
 		else if (strcmp(array[0], "infotab") == 0){
@@ -311,6 +314,7 @@ int main(int argc, char** argv)
 							printf("%d\t", j);
 							printf("%d\t\t", main_array[temp1].pointSecond[j].is_occupied2);
 							printf("%d\n", main_array[temp1].pointSecond[j].physical_address);
+							printf("Note: -1 is default physical address if it hasn't been set\n");
 						}
     					}
 				}
@@ -332,11 +336,10 @@ int main(int argc, char** argv)
 
 void *shell_start(void* vargp)
 {
-	int found; 
-
 	while(1){
 		if (thread_close == 0){
 			pthread_exit(NULL);
+			sleep(1);
 		}
 
 	}	
