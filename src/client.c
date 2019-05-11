@@ -16,6 +16,9 @@ int thread_close;
 char *strlwr(char *str);
 void *shell_start(void *vargp);
 pthread_t thread_id;
+void handler1(int sig);
+int server_fifo;
+int client_fifo;
 
 typedef struct level_two{
 	int physical_address;
@@ -28,6 +31,7 @@ typedef struct level_one{
 	int is_occupied1;
 }level_one;
 
+level_one main_array[16];
 
 int main(int argc, char** argv)
 {
@@ -45,8 +49,8 @@ int main(int argc, char** argv)
 	char command[255];
 	char input_find[255];
 	int exit_flag = 0;
-	level_one main_array[16];
 	thread_close = 1;
+	signal(SIGTERM, handler1);
 
 	for (int i = 0; i < 16; i++){
 		main_array[i].is_occupied1 = 0;
@@ -57,8 +61,6 @@ int main(int argc, char** argv)
 		}
 	}	
 	
-	int server_fifo;
-	int client_fifo;
 	int start_control = 0;
 	
 	if (client == 1){
@@ -96,6 +98,7 @@ int main(int argc, char** argv)
 		array[0] = strlwr(array[0]);
 
 		if (strcmp(array[0], "start") == 0){
+			pid_t process;
 			if (start_control == 1){
 				fprintf(stderr, "You cannot start multiple times\n");
 			}
@@ -103,10 +106,11 @@ int main(int argc, char** argv)
 				pthread_create(&thread_id, NULL, shell_start, NULL);
 				char buf1 [100];
 					
-				sprintf(buf1, "Thread %ld", thread_id);
+				sprintf(buf1, "Thread %ld %d", thread_id, getpid());
 				printf("Session is now active\n");
 				write(server_fifo, buf1,100*sizeof(char)); 	
-				start_control++;	
+				start_control++;
+					
 			}
 		}
 		else if (strcmp(array[0], "alloc") == 0){
@@ -180,6 +184,7 @@ int main(int argc, char** argv)
 
 				if (main_array[first_level].pointSecond[second_level].is_occupied2 == 1){				
 					main_array[first_level].pointSecond[second_level].is_occupied2 = 0;
+					main_array[first_level].pointSecond[second_level].physical_address = -1;
 				}
 				else{
 					fprintf(stderr, "This memory address was not allocated\n");
@@ -259,8 +264,7 @@ int main(int argc, char** argv)
 				if (main_array[first_level].pointSecond[second_level].is_occupied2 == 1){
 					int physical_address = main_array[first_level].pointSecond[second_level].physical_address;
 					sprintf(buff5, "Store %d %s", physical_address, temp_array);
-					//printf("Storing in server...%s\n", temp_array);
-					printf("BUFF 5: %s\n", buff5);
+					printf("Storing in server...%s\n", temp_array);
 					write(server_fifo, buff5, 100*sizeof(char));
 					read(client_fifo, buff6, 100*sizeof(char));
 					printf("%s", buff6);
@@ -314,14 +318,28 @@ int main(int argc, char** argv)
 							printf("%d\t", j);
 							printf("%d\t\t", main_array[temp1].pointSecond[j].is_occupied2);
 							printf("%d\n", main_array[temp1].pointSecond[j].physical_address);
-							printf("Note: -1 is default physical address if it hasn't been set\n");
 						}
+						printf("Note: -1 is default physical address if it hasn't been set\n");
     					}
 				}
 			}
 		}
 		else if (strcmp(array[0], "exit") == 0){
+			char buff9[100];
+			for (int i = 0; i < 16; i++){
+				main_array[i].is_occupied1 = 0;
+				for (int j = 0; j < 4; j++){
+					main_array[i].pointSecond[j].is_occupied2 = 0;
+					main_array[i].pointSecond[j].physical_address = -1;
+				}
+			}
+			sprintf(buff9, "Exit %ld %d", thread_id, getpid());
+			write(server_fifo, buff9, 100*sizeof(char));
+			thread_close = 0;
+			start_control--;
+			sleep(1);
 			exit_flag = 1;
+		
 		}
 		else{
 			fprintf(stderr, "Invalid command\n");
@@ -356,4 +374,20 @@ char *strlwr(char *str)
   	}
 
   	return str;
+}
+
+void handler1(int sig){
+	write(1, "Server has been closed. Client will now be shut", 50);
+	write(1, "\n", 10);
+	for (int i = 0; i < 16; i++){
+		main_array[i].is_occupied1 = 0;
+		for (int j = 0; j < 4; j++){
+			main_array[i].pointSecond[j].is_occupied2 = 0;
+                        main_array[i].pointSecond[j].physical_address = -1;
+		}
+	}
+
+	close(server_fifo);
+	close(client_fifo);
+	exit(0);
 }

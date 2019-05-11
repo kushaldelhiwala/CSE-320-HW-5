@@ -23,11 +23,20 @@ typedef struct warehouse_struct{
 
 pthread_t thread_track[20];
 int thread_track_count = 0;
+pid_t processes[20];
 void handler1(int sig);
 char *strlwr(char *str);
 int total_collections;
 warehouse_struct warehouse[10000];
-int warehouse_size; 
+int warehouse_size;
+int server_fifo1 = 0;
+int client_fifo1 = 0;
+int server_fifo2 = 0;
+int client_fifo2 = 0;
+int server_fifo3 = 0;
+int client_fifo3 = 0;
+int server_fifo4 = 0;
+int client_fifo4 = 0; 
 void red ();
 void yellow();
 void green();
@@ -49,14 +58,14 @@ int main(int argc, char** argv)
 		return -1;
 	}
  
-	int server_fifo1 = open("fifo_server1", O_RDWR);
-	int client_fifo1 = open("fifo_client1", O_RDWR);
-	int server_fifo2 = open("fifo_server2", O_RDWR);
-	int client_fifo2 = open("fifo_client2", O_RDWR);
-	int server_fifo3 = open("fifo_server3", O_RDWR);
-	int client_fifo3 = open("fifo_client3", O_RDWR);
-	int server_fifo4 = open("fifo_server4", O_RDWR);
-	int client_fifo4 = open("fifo_client4", O_RDWR);
+	server_fifo1 = open("fifo_server1", O_RDWR);
+	client_fifo1 = open("fifo_client1", O_RDWR);
+	server_fifo2 = open("fifo_server2", O_RDWR);
+	client_fifo2 = open("fifo_client2", O_RDWR);
+	server_fifo3 = open("fifo_server3", O_RDWR);
+	client_fifo3 = open("fifo_client3", O_RDWR);
+	server_fifo4 = open("fifo_server4", O_RDWR);
+	client_fifo4 = open("fifo_client4", O_RDWR);
 	
 	signal(SIGINT, handler1);
 	char operation[100];
@@ -84,10 +93,12 @@ int main(int argc, char** argv)
 				red();
 
 				if (strcmp(operation, "Thread") == 0){
-					sscanf(buffer1, "%*s %ld", &incoming_thread);
+					pid_t process1;
+					sscanf(buffer1, "%*s %ld %d", &incoming_thread, &process1);
 					printf("Started Session with Client 1. Thread ID is %ld\n", incoming_thread);
 					thread_track[0] = incoming_thread;
-					thread_track_count++;		
+					thread_track_count++;
+					processes[0] = process1;
 				}
 			
 				if (strcmp(operation, "Alloc") == 0){
@@ -111,6 +122,8 @@ int main(int argc, char** argv)
 					sscanf(buffer1, "%*s %d", &dealloc_id);
 					if (warehouse[dealloc_id].is_valid == 1){
 						warehouse[dealloc_id].is_valid = 0;
+						strcpy(warehouse[dealloc_id].attr_name, "");
+						warehouse[dealloc_id].thread_id = 0;
 						printf("%d has been removed from database (Client 1)\n", dealloc_id);
 					}
 					else{
@@ -167,6 +180,24 @@ int main(int argc, char** argv)
 						}
 					}
 					thread_track[0] = 0;
+				}
+				
+				if (strcmp(operation, "Exit") == 0){
+					pthread_t thread_to_delete;
+					pid_t process_to_delete;
+					char buf6[100];
+					printf("Recieved Exit Message from Client 1!\n");
+					
+					for (int i = 0; i < 10000; i++){
+                                                 if (warehouse[i].thread_id == thread_to_delete){
+                                                         warehouse[i].thread_id = 0;
+                                                         warehouse[i].is_valid = 0;
+                                                         strcpy(warehouse[i].attr_name, "");
+                                                 }
+                                         }
+                                         thread_track[0] = 0;
+					 processes[0] = 0;
+	
 				}	
 			}
 			
@@ -177,10 +208,12 @@ int main(int argc, char** argv)
 				blue();
 
                                 if (strcmp(operation, "Thread") == 0){
-                                        sscanf(buffer1, "%*s %ld", &incoming_thread);
+					pid_t process1;
+                                        sscanf(buffer1, "%*s %ld %d", &incoming_thread, &process1);
 					printf("Started Session with Client 2. Thread ID is %ld\n", incoming_thread);
                                         thread_track[1] = incoming_thread;
-                                        thread_track_count++;           
+                                        thread_track_count++; 
+					processes[1] = process1;
                                 }
 
                                  if (strcmp(operation, "Alloc") == 0){
@@ -260,7 +293,26 @@ int main(int argc, char** argv)
                                                 }
                                         }
 					thread_track[1] = 0;
-                                }       
+                                }
+				
+				if (strcmp(operation, "Exit") == 0){
+                                         pthread_t thread_to_delete;
+                                         pid_t process_to_delete;
+                                         char buf6[100];
+                                         printf("Recieved Exit Message from Client 2!\n");
+                                 
+                                         for (int i = 0; i < 10000; i++){
+                                                  if (warehouse[i].thread_id == thread_to_delete){
+                                                          warehouse[i].thread_id = 0;
+                                                          warehouse[i].is_valid = 0;
+                                                          strcpy(warehouse[i].attr_name, "");
+                                                  }
+                                          }
+                                          thread_track[1] = 0;
+                                          processes[1] = 0;
+ 
+                                 }
+       
                         }
 		
 			if (FD_ISSET(server_fifo3, &set2)){
@@ -270,10 +322,12 @@ int main(int argc, char** argv)
 				green();
 
                                 if (strcmp(operation, "Thread") == 0){
-                                        sscanf(buffer1, "%*s %ld", &incoming_thread);
+					pid_t process1;
+                                        sscanf(buffer1, "%*s %ld %d", &incoming_thread, &process1);
 					printf("Started Session with Client 3. Thread ID is %ld\n", incoming_thread);
                                         thread_track[2] = incoming_thread;
-                                        thread_track_count++;           
+                                        thread_track_count++; 
+					processes[2] = process1;
                                 }
 
                                  if (strcmp(operation, "Alloc") == 0){
@@ -353,7 +407,26 @@ int main(int argc, char** argv)
                                                 }
                                         }
 					thread_track[2] = 0;
-                                }       
+                                }
+				
+				if (strcmp(operation, "Exit") == 0){
+                                         pthread_t thread_to_delete;
+                                         pid_t process_to_delete;
+                                         char buf6[100];
+                                         printf("Recieved Exit Message from Client 1!\n");
+                                 
+                                         for (int i = 0; i < 10000; i++){
+                                                  if (warehouse[i].thread_id == thread_to_delete){
+                                                          warehouse[i].thread_id = 0;
+                                                          warehouse[i].is_valid = 0;
+                                                          strcpy(warehouse[i].attr_name, "");
+                                                  }
+                                          }
+                                          thread_track[2] = 0;
+                                          processes[2] = 0;
+ 
+                                 }
+       
                         }
 			if (FD_ISSET(server_fifo4, &set2)){
                                 read(server_fifo4, buffer1, 100*sizeof(char));
@@ -362,10 +435,12 @@ int main(int argc, char** argv)
 				yellow();
 
                                 if (strcmp(operation, "Thread") == 0){
-                                        sscanf(buffer1, "%*s %ld", &incoming_thread);
+					pid_t process1;
+                                        sscanf(buffer1, "%*s %ld %d", &incoming_thread, &process1);
                                         printf("Started Session with Client 4. Thread ID is %ld\n", incoming_thread);
                                         thread_track[3] = incoming_thread;
-                                        thread_track_count++;           
+                                        thread_track_count++;
+					processes[3] = process1;
                                 }
                         
                                 if (strcmp(operation, "Alloc") == 0){
@@ -374,7 +449,7 @@ int main(int argc, char** argv)
                                                 if (warehouse[i].is_valid == 0){
                                                         char buf3 [100];
                                                         sprintf(buf3, "%d", i);
-                                                        write(client_fifo1, buf3, 100*sizeof(char));
+                                                        write(client_fifo4, buf3, 100*sizeof(char));
                                                         warehouse[i].is_valid = 1;
                                                         warehouse[i].thread_id = thread_track[0];
                                                         printf("Space Allocated at %d for Client 4\n", i);
@@ -404,7 +479,7 @@ int main(int argc, char** argv)
                                         if (warehouse[read_id].is_valid == 1){
                                                 sprintf(buff3, "%s", warehouse[read_id].attr_name);
                                                 printf("Sending value to client 4...\n");
-                                                write(client_fifo1, buff3, 100*sizeof(char));
+                                                write(client_fifo4, buff3, 100*sizeof(char));
                                         }
                                         else{
                                                 fprintf(stderr, "Read failed due to invalid address (Client 4)\n");
@@ -422,7 +497,7 @@ int main(int argc, char** argv)
                                                 strcpy(warehouse[store_id].attr_name, buff4);
                                                 printf("Stored %s from Client 4 at Index %d\n", warehouse[store_id].attr_name, store_id);
                                                 sprintf(buff5, "Store Successful\n");
-                                                write(client_fifo1, buff5, 100*sizeof(char));
+                                                write(client_fifo4, buff5, 100*sizeof(char));
                                         }
                 
                                         else{
@@ -445,9 +520,28 @@ int main(int argc, char** argv)
                                                 }
                                         }
                                         thread_track[3] = 0;
-                                }       
+                                }
+
+				if (strcmp(operation, "Exit") == 0){
+                                         pthread_t thread_to_delete;
+                                         pid_t process_to_delete;
+                                         char buf6[100];
+                                         printf("Recieved Exit Message from Client 1!\n");
+                                 
+                                         for (int i = 0; i < 10000; i++){
+                                                  if (warehouse[i].thread_id == thread_to_delete){
+                                                          warehouse[i].thread_id = 0;
+                                                          warehouse[i].is_valid = 0;
+                                                          strcpy(warehouse[i].attr_name, "");
+                                                  }
+                                          }
+                                          thread_track[3] = 0;
+                                          processes[3] = 0;
+ 
+                                 }
+       
                         }
-				
+			
 		}
 
 	}
@@ -514,6 +608,26 @@ void handler1(int sig)
 		}
 	
 		if (strcmp(array[0], "exit") == 0){
+			if (processes[0] > 0){
+				kill(processes[0], SIGTERM); 
+			}
+			if (processes[1] > 0){
+				kill(processes[1], SIGTERM);
+			}
+			if (processes[2] > 0){
+				kill(processes[2], SIGTERM);
+			}
+			if (processes[3] > 0){
+				kill(processes[3], SIGTERM);
+			}
+			close(server_fifo1);
+			close(client_fifo1);
+			close(server_fifo2);
+			close(client_fifo2);
+			close(server_fifo3);
+			close(client_fifo3);
+			close(server_fifo4);
+			close(client_fifo4);
 			exit_flag = 1;
 			exit(0);
 		}
@@ -536,21 +650,26 @@ char *strlwr(char *str)
 }
 
 void red () {
+	fprintf(stderr, "\033[1;31m");
 	printf("\033[1;31m");
 }
 
 void yellow () {
+	fprintf(stderr, "\033[1;33m");
 	printf("\033[1;33m");
 }
 
 void green(){
+	fprintf(stderr, "\033[1;32m");
 	printf("\033[1;32m");
 }
 
 void blue(){
+	fprintf(stderr, "\033[1;34m");
 	printf("\033[1;34m");
 }
 
 void reset () {
+	fprintf(stderr, "\033[0m");
 	printf("\033[0m");
 }
