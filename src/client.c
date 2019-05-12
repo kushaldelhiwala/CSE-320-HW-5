@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include <stdint.h>
 #include <fcntl.h> // for open
-
+// FIX LOCAL ID SHIFTING
 int client; 
 int thread_close;
 char *strlwr(char *str);
@@ -19,6 +19,8 @@ pthread_t thread_id;
 void handler1(int sig);
 int server_fifo;
 int client_fifo;
+int addToCache(int warehouse_physical, char warehouse_attr[]);
+int inCache(int warehouse_physical);
 
 typedef struct level_two{
 	int physical_address;
@@ -31,7 +33,15 @@ typedef struct level_one{
 	int is_occupied1;
 }level_one;
 
+// Create cache struct
+typedef struct cache{
+	int warehouse_physical;
+	char warehouse_attr[100];
+}cache;
+
 level_one main_array[16];
+//Create cache array
+cache cache_array[4];
 
 int main(int argc, char** argv)
 {
@@ -59,7 +69,13 @@ int main(int argc, char** argv)
 			main_array[i].pointSecond[j].is_occupied2 = 0;
 			main_array[i].pointSecond[j].physical_address = -1;
 		}
-	}	
+	}
+	
+	// Initialize cache array
+	for (int i = 0; i < 4; i++){
+		cache_array[i].warehouse_physical = -1;
+		memset(cache_array[i].warehouse_attr, 0, 100);
+	}
 	
 	int start_control = 0;
 	
@@ -135,9 +151,10 @@ int main(int argc, char** argv)
 								read(client_fifo, buff3, 100*sizeof(char));
 
 								sscanf(buff3, "%d", &warehouse_index);
-								int local_id = i;
-								local_id = local_id << 4;
-								local_id|= j;
+								int local_id = i * 4;
+								local_id +=j;
+								//local_id = local_id << 4;
+								//local_id|= j;
 								printf("Allocation Complete! Local ID: %d will be stored at Warehouse Index: %d\n", local_id, warehouse_index);
 								success = 1;
 								main_array[i].pointSecond[j].physical_address = warehouse_index;
@@ -189,12 +206,20 @@ int main(int argc, char** argv)
 				else{
 					fprintf(stderr, "This memory address was not allocated\n");
 				}
+
+				
 				if (main_array[first_level].is_occupied1 == 1){
 					main_array[first_level].is_occupied1 = 0;
 				}
 			
 				char buff2[100];
 				int warehouse_id = main_array[first_level].pointSecond[second_level].physical_address;
+				for (int i = 0; i < 4; i++){
+					if (cache_array[i].warehouse_physical == warehouse_id){
+						cache_array[i].warehouse_physical = -1;
+						strcpy(cache_array[i].warehouse_attr, "");
+					}
+				}
 				sprintf(buff2, "Dealloc %d", warehouse_id);
 				printf("Deallocing started\n");
 				write(server_fifo, buff2, 100*sizeof(char));
@@ -220,17 +245,34 @@ int main(int argc, char** argv)
 
 				read_temp = read_id;
 				read_temp = read_temp >> 2;
-
+		
 				int first_level = read_temp;
 			
 				char buff2[100];
 				char buff4[100];
+				char buffCache[100];
 				int physical_address = main_array[first_level].pointSecond[second_level].physical_address;
-				sprintf(buff2, "Read %d", physical_address);
-				printf("Reading from server...\n");
-				write(server_fifo, buff2, 100*sizeof(char));
-				read(client_fifo, buff4, 100*sizeof(char));
-				printf("Art Entry at %d is: %s\n", read_id ,buff4);			
+				
+				int foundCache = inCache(physical_address);
+				printf("FOUND CACHE: %d\n", foundCache);
+				if (foundCache > -1){
+					printf("cache found\n");
+					strcpy(buffCache, cache_array[foundCache].warehouse_attr);
+					printf("Art Entry at %d is: %s\n", physical_address, buffCache);
+				}
+
+				else{
+					printf("cache miss\n");
+					sprintf(buff2, "Read %d", physical_address);
+					printf("Reading from server...\n");
+					write(server_fifo, buff2, 100*sizeof(char));
+					read(client_fifo, buff4, 100*sizeof(char));
+					printf("Art Entry at %d is: %s\n", read_id ,buff4);
+					int eviction = addToCache(physical_address, buff4);
+					if (eviction == 0){
+						printf("eviction\n");
+					}	
+				}
 			}
 		}
 		else if (strcmp(array[0], "store") == 0){
@@ -285,6 +327,10 @@ int main(int argc, char** argv)
 				}
 			}
 			
+			for (int i = 0; i < 4; i++){
+				cache_array[i].warehouse_physical = -1;
+				strcpy(cache_array[i].warehouse_attr, "");
+			}
 			sprintf(buf5, "Close %ld", thread_id);
 			write(server_fifo, buf5, 100*sizeof(char));
 			thread_close = 0;
@@ -333,6 +379,10 @@ int main(int argc, char** argv)
 					main_array[i].pointSecond[j].physical_address = -1;
 				}
 			}
+			for (int i = 0; i < 4; i++){
+                        	cache_array[i].warehouse_physical = -1;
+                        	strcpy(cache_array[i].warehouse_attr, "");
+                        }
 			sprintf(buff9, "Exit %ld %d", thread_id, getpid());
 			write(server_fifo, buff9, 100*sizeof(char));
 			thread_close = 0;
@@ -390,4 +440,46 @@ void handler1(int sig){
 	close(server_fifo);
 	close(client_fifo);
 	exit(0);
+}
+
+// Add to Cache
+// Default cache value is -1
+int addToCache(int warehouse_physical, char warehouse_attr[]){
+	printf("ADD TO CACHE\n");
+	int i = 0;
+	int miss_evict = 0;
+	for (i = 0; i < 4; i++){
+		if (cache_array[i].warehouse_physical == -1){
+			cache_array[i].warehouse_physical = warehouse_physical;
+			strcpy(cache_array[i].warehouse_attr, warehouse_attr);
+			miss_evict = 1;
+			break;
+		}
+
+	}
+	
+	if (i == 4){
+		cache_array[0].warehouse_physical = warehouse_physical;
+		strcpy(cache_array[0].warehouse_attr, warehouse_attr);
+		miss_evict = 0;
+	}
+	return miss_evict;	
+}
+
+// Check Cache 
+int inCache(int warehouse_physical){
+	int return_cache = -1;
+	int i;
+	for (i = 0; i < 4; i++){
+		if (cache_array[i].warehouse_physical == warehouse_physical){
+			return_cache = i;
+			break;
+		}
+	}
+	
+	if (i == 4){
+		return_cache = -1;
+	}
+
+	return return_cache;
 }
