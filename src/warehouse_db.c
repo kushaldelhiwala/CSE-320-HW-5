@@ -648,6 +648,7 @@ void handler1(int sig)
 			close(client_fifo3);
 			close(server_fifo4);
 			close(client_fifo4);
+			free(array[0]);
 			exit_flag = 1;
 			exit(0);
 		}

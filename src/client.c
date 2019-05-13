@@ -406,6 +406,7 @@ int main(int argc, char** argv)
 
 	} while (exit_flag == 0);
 	
+	free(array[0]);
 	close(server_fifo);
 	close(client_fifo);
 	return 0;
