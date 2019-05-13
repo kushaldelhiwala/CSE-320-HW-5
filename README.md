@@ -34,4 +34,9 @@ In general, you will be able to run the program if you follow the steps above. B
 
 1) On the server side, we will be printing messages from all 4 clients. Client 1 messages will print in red, Client 2 in blue, Client 3 in green, Client 4 in yellow.
 2) Please ensure the commands are entered in lowercase. 
-3)   
+3) On the client side, I do print messages when something is sent to the server -> when it is recieved back 
+4) Clients that have started a session with the server WILL CLOSE IMMEDIATELY when the server has been shut down
+	a) If you close the server before clients have established session with it, the clients will not close 
+5) If you store two things at the same address, the second entry will overwrite the previous one. 
+6) Cache has been implemented only in read. Meaning, that once you read an item, it will be stored onto the cache if it is not already on there, for easy retrieal. 
+   

@@ -603,15 +603,16 @@ void handler1(int sig)
 
 			else{
 				printf("List of Entries by Client %ld\n", temp_id);
-				for (int i = 0; i < 10000; i++){
+				printf("ID\t\t\tAttribute Name\t\tIs Valid\n");
+				for (int i = 0; i < warehouse_size; i++){
 					if (warehouse[i].thread_id == temp_id && warehouse[i].is_valid == 1){
-						printf("ID\tAttribute Name\tIs Valid\n");
-						printf("%ld\t", warehouse[i].thread_id);
-						printf("%s\t", warehouse[i].attr_name);
-						printf("%d\t", warehouse[i].is_valid);
+						printf("%ld\t\t", warehouse[i].thread_id);
+						printf("%s\t\t", warehouse[i].attr_name);
+						printf("%d\n", warehouse[i].is_valid);
 					}
 				}				
 			}
+			 fflush(stdout);
 			break;
 		}
 

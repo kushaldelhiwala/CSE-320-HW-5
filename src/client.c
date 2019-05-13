@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include <stdint.h>
 #include <fcntl.h> // for open
-// FIX LOCAL ID SHIFTING
+
 int client = 0;
 int thread_close = 0;
 char *strlwr(char *str);
@@ -53,7 +53,7 @@ int main(int argc, char** argv)
 	char *client_input = *(argv + 1);
 	client = atoi(client_input);
 	
-	char input_line[255];
+	char input_line[255] = {0};
 	char* found;
 	char* array[100];
 	char command[255];
@@ -396,6 +396,7 @@ int main(int argc, char** argv)
 			thread_close = 0;
 			start_control--;
 			sleep(1);
+			pthread_join(thread_id, NULL);
 			exit_flag = 1;
 		
 		}
