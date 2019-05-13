@@ -613,6 +613,7 @@ void handler1(int sig)
 				}				
 			}
 			 fflush(stdout);
+			free(array[0]);
 			break;
 		}
 
@@ -623,6 +624,7 @@ void handler1(int sig)
 				printf("Warehouse Record Name: %s\t", warehouse[i].attr_name);
 				printf("Warehouse Record Valid: %d\n", warehouse[i].is_valid);
 			}
+			free(array[0]);
 			break;
 
 		}

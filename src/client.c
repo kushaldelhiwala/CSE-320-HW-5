@@ -128,6 +128,7 @@ int main(int argc, char** argv)
 				start_control++;
 					
 			}
+			free(array[0]);
 		}
 		else if (strcmp(array[0], "alloc") == 0){
 			if (start_control == 0){
@@ -175,7 +176,8 @@ int main(int argc, char** argv)
 				if (success == 0){
 					fprintf(stderr, "You are out of space\n");
 				}
-			} 			
+			}
+			free(array[0]); 			
 		}
 
 		else if (strcmp(array[0], "dealloc") == 0){
@@ -232,7 +234,8 @@ int main(int argc, char** argv)
                                 }
 
 				printf("Dealling complete\n");
-			}						
+			}
+			free(array[0]);						
 		}
 		else if (strcmp(array[0], "read") == 0){
 			if (start_control == 0){
@@ -282,6 +285,7 @@ int main(int argc, char** argv)
 					}	
 				}
 			}
+			free(array[0]);
 		}
 		else if (strcmp(array[0], "store") == 0){
 			if (start_control == 0){
@@ -323,6 +327,7 @@ int main(int argc, char** argv)
 					fprintf(stderr, "Unoccupied store\n");
 				}
 			}
+			free(array[0]);
 	
 		}
 		else if (strcmp(array[0], "close") == 0){
@@ -345,7 +350,7 @@ int main(int argc, char** argv)
 			start_control--;
 			sleep(1);
 			printf("Your session has been closed. Thank you!\n");
-						
+			free(array[0]);		
 		}		
 		else if (strcmp(array[0], "infotab") == 0){
 			if (start_control == 0){
@@ -377,6 +382,7 @@ int main(int argc, char** argv)
     					}
 				}
 			}
+			free(array[0]);
 		}
 		else if (strcmp(array[0], "exit") == 0){
 			char buff9[100] = {0};
@@ -396,6 +402,7 @@ int main(int argc, char** argv)
 			thread_close = 0;
 			start_control--;
 			sleep(1);
+			free(array[0]);
 			pthread_join(thread_id, NULL);
 			exit_flag = 1;
 		
@@ -406,7 +413,7 @@ int main(int argc, char** argv)
 
 	} while (exit_flag == 0);
 	
-	free(array[0]);
+	//free(array[0]);
 	close(server_fifo);
 	close(client_fifo);
 	return 0;
