@@ -1,10 +1,10 @@
 all: client server fifos
 
 client:
-	gcc src/client.c -o client -lpthread
+	gcc -g src/client.c -o client -lpthread
 
 server:
-	gcc src/warehouse_db.c -o server -lpthread 
+	gcc -g src/warehouse_db.c -o server -lpthread 
 
 fifos: 
 	gcc src/fifos.c -o fifos -lpthread 

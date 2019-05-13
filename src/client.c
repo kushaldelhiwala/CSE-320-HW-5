@@ -11,14 +11,14 @@
 #include <stdint.h>
 #include <fcntl.h> // for open
 // FIX LOCAL ID SHIFTING
-int client; 
-int thread_close;
+int client = 0;
+int thread_close = 0;
 char *strlwr(char *str);
 void *shell_start(void *vargp);
-pthread_t thread_id;
+pthread_t thread_id = 0;
 void handler1(int sig);
-int server_fifo;
-int client_fifo;
+int server_fifo = 0;
+int client_fifo = 0;
 int addToCache(int warehouse_physical, char warehouse_attr[]);
 int inCache(int warehouse_physical);
 
@@ -114,13 +114,13 @@ int main(int argc, char** argv)
 		array[0] = strlwr(array[0]);
 
 		if (strcmp(array[0], "start") == 0){
-			pid_t process;
+			pid_t process = 0;
 			if (start_control == 1){
 				fprintf(stderr, "You cannot start multiple times\n");
 			}
 			else{
 				pthread_create(&thread_id, NULL, shell_start, NULL);
-				char buf1 [100];
+				char buf1 [100] = {0};
 					
 				sprintf(buf1, "Thread %ld %d", thread_id, getpid());
 				printf("Session is now active\n");
@@ -141,9 +141,9 @@ int main(int argc, char** argv)
 					if (main_array[i].is_occupied1 == 0){	
 						while (j < 4){
 							if(main_array[i].pointSecond[j].is_occupied2 == 0){
-								char buff2[100];
-								char buff3[100];
-								int warehouse_index;
+								char buff2[100] = {0};
+								char buff3[100] = {0};
+								int warehouse_index = 0;
 
 								sprintf(buff2, "Alloc");
 								printf("Allocating space...\n");
@@ -183,7 +183,7 @@ int main(int argc, char** argv)
 				fprintf(stderr, "Please Start the Program First\n");
 			}
 			else{
-				int dealloc_id;
+				int dealloc_id = 0;
 			
 				sscanf(input_line, "%*s %d", &dealloc_id);
 			
@@ -199,20 +199,20 @@ int main(int argc, char** argv)
 			
 				int first_level = dealloc_temp;
 
-				if (main_array[first_level].pointSecond[second_level].is_occupied2 == 1){				
+				/*if (main_array[first_level].pointSecond[second_level].is_occupied2 == 1){				
 					main_array[first_level].pointSecond[second_level].is_occupied2 = 0;
 					main_array[first_level].pointSecond[second_level].physical_address = -1;
 				}
 				else{
 					fprintf(stderr, "This memory address was not allocated\n");
-				}
+				}*/
 
 				
 				if (main_array[first_level].is_occupied1 == 1){
 					main_array[first_level].is_occupied1 = 0;
 				}
 			
-				char buff2[100];
+				char buff2[100] = {0};
 				int warehouse_id = main_array[first_level].pointSecond[second_level].physical_address;
 				for (int i = 0; i < 4; i++){
 					if (cache_array[i].warehouse_physical == warehouse_id){
@@ -223,6 +223,14 @@ int main(int argc, char** argv)
 				sprintf(buff2, "Dealloc %d", warehouse_id);
 				printf("Deallocing started\n");
 				write(server_fifo, buff2, 100*sizeof(char));
+				if (main_array[first_level].pointSecond[second_level].is_occupied2 == 1){
+                                        main_array[first_level].pointSecond[second_level].is_occupied2 = 0;
+                                        main_array[first_level].pointSecond[second_level].physical_address = -1;
+                                }
+                                else{
+                                         fprintf(stderr, "This memory address was not allocated\n");
+                                }
+
 				printf("Dealling complete\n");
 			}						
 		}
@@ -231,7 +239,7 @@ int main(int argc, char** argv)
 				fprintf(stderr, "Please Start the Program First\n");
 			}
 			else{
-				int read_id;
+				int read_id = 0;
 			
 				sscanf(input_line, "%*s %d", &read_id);
 
@@ -248,9 +256,9 @@ int main(int argc, char** argv)
 		
 				int first_level = read_temp;
 			
-				char buff2[100];
-				char buff4[100];
-				char buffCache[100];
+				char buff2[100] = {0};
+				char buff4[100] = {0};
+				char buffCache[100] = {0};
 				int physical_address = main_array[first_level].pointSecond[second_level].physical_address;
 				
 				int foundCache = inCache(physical_address);
@@ -280,9 +288,9 @@ int main(int argc, char** argv)
 				fprintf(stderr, "Please Start the Program First\n");
 			}
 			else{
-				int store_id; 
-				char store_array[50];
-				char temp_array[50];
+				int store_id = 0;
+				char store_array[50] = {0};
+				char temp_array[50] = {0};
 				temp_array[0] = '"';
 				temp_array[1] = 0;
 			
@@ -301,8 +309,8 @@ int main(int argc, char** argv)
                         	store_temp = store_temp >> 2;
                         	int first_level = store_temp;
 
-				char buff5[100];
-				char buff6[100];
+				char buff5[100] = {0};
+				char buff6[100] = {0};
 				if (main_array[first_level].pointSecond[second_level].is_occupied2 == 1){
 					int physical_address = main_array[first_level].pointSecond[second_level].physical_address;
 					sprintf(buff5, "Store %d %s", physical_address, temp_array);
@@ -371,7 +379,7 @@ int main(int argc, char** argv)
 			}
 		}
 		else if (strcmp(array[0], "exit") == 0){
-			char buff9[100];
+			char buff9[100] = {0};
 			for (int i = 0; i < 16; i++){
 				main_array[i].is_occupied1 = 0;
 				for (int j = 0; j < 4; j++){

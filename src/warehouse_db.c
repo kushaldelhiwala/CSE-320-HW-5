@@ -26,9 +26,9 @@ int thread_track_count = 0;
 pid_t processes[20];
 void handler1(int sig);
 char *strlwr(char *str);
-int total_collections;
+int total_collections = 0;
 warehouse_struct warehouse[10000];
-int warehouse_size;
+int warehouse_size = 0;
 int server_fifo1 = 0;
 int client_fifo1 = 0;
 int server_fifo2 = 0;
@@ -57,6 +57,20 @@ int main(int argc, char** argv)
 		printf("Warehouse size is too big. Please try again.\n");
 		return -1;
 	}
+	
+	for (int i = 0; i < warehouse_size; i++){
+		warehouse[i].is_valid = 0;
+		warehouse[i].thread_id = 0;
+		strcpy(warehouse[i].attr_name, "");
+	}
+	
+	for (int i = 0; i < 20; i++){
+		processes[i] = 0;
+	}
+
+	for (int i = 0; i < 20; i++){
+		thread_track[i] = 0;
+	}
  
 	server_fifo1 = open("fifo_server1", O_RDWR);
 	client_fifo1 = open("fifo_client1", O_RDWR);
@@ -68,13 +82,13 @@ int main(int argc, char** argv)
 	client_fifo4 = open("fifo_client4", O_RDWR);
 	
 	signal(SIGINT, handler1);
-	char operation[100];
-	pthread_t incoming_thread;
-	char buffer1[100];
-	char buffer2[100];
+	char operation[100] = {0};
+	pthread_t incoming_thread = 0;
+	char buffer1[100] = {0};
+	char buffer2[100] = {0};
 	fd_set set1;
 	fd_set set2;
-	int revtal;
+	int revtal = 0;
 	FD_ZERO(&set1);
 	FD_SET(server_fifo1, &set1);
 	FD_SET(server_fifo2, &set1);
@@ -93,7 +107,7 @@ int main(int argc, char** argv)
 				red();
 
 				if (strcmp(operation, "Thread") == 0){
-					pid_t process1;
+					pid_t process1 = 0;
 					sscanf(buffer1, "%*s %ld %d", &incoming_thread, &process1);
 					printf("Started Session with Client 1. Thread ID is %ld\n", incoming_thread);
 					thread_track[0] = incoming_thread;
@@ -105,7 +119,7 @@ int main(int argc, char** argv)
 					printf("Recieved Alloc Message from Client 1!\n");
 					for (int i = 0; i < warehouse_size; i++){
 						if (warehouse[i].is_valid == 0){
-							char buf3 [100];
+							char buf3 [100] = {0};
 							sprintf(buf3, "%d", i);
 							write(client_fifo1, buf3, 100*sizeof(char));
 							warehouse[i].is_valid = 1;
@@ -117,9 +131,10 @@ int main(int argc, char** argv)
 				}
 
 				if (strcmp(operation, "Dealloc") == 0){
-					int dealloc_id;
+					int dealloc_id = 0;
 					printf("Recieved Dealloc Message from Client 1!\n");
 					sscanf(buffer1, "%*s %d", &dealloc_id);
+					printf("Dealloc ID: %d\n", dealloc_id);
 					if (warehouse[dealloc_id].is_valid == 1){
 						warehouse[dealloc_id].is_valid = 0;
 						strcpy(warehouse[dealloc_id].attr_name, "");
@@ -132,8 +147,8 @@ int main(int argc, char** argv)
 				}
 	
 				if (strcmp(operation, "Read") == 0){
-					int read_id;
-					char buff3[100];
+					int read_id = 0;
+					char buff3[100] = {0};
 					printf("Recieved Read Message from Client 1\n");
 					sscanf(buffer1, "%*s %d", &read_id);
 					if (warehouse[read_id].is_valid == 1){
@@ -148,9 +163,9 @@ int main(int argc, char** argv)
 				}
 		
 				if (strcmp(operation, "Store") == 0){
-					int store_id; 
-					char buff4[100];
-					char buff5[100];
+					int store_id = 0;
+					char buff4[100] = {0};
+					char buff5[100] = {0};
 					printf("Recieved Store Message from Client 1\n");
 					sscanf(buffer1, "%*s %d \"%[^\"]\"", &store_id, buff4);
 					if (warehouse[store_id].is_valid == 1){
@@ -167,8 +182,8 @@ int main(int argc, char** argv)
 				}
 	
 				if (strcmp(operation, "Close") == 0){
-					pthread_t thread_to_delete;
-					char buff3[100];
+					pthread_t thread_to_delete = 0;
+					char buff3[100] = {0};
 					printf("Recieved Close Message from Client 1!\n");
 					sscanf(buffer1, "%*s %ld", &thread_to_delete);
 			
@@ -183,9 +198,9 @@ int main(int argc, char** argv)
 				}
 				
 				if (strcmp(operation, "Exit") == 0){
-					pthread_t thread_to_delete;
-					pid_t process_to_delete;
-					char buf6[100];
+					pthread_t thread_to_delete = 0;
+					pid_t process_to_delete = 0;
+					char buf6[100] = {0};
 					printf("Recieved Exit Message from Client 1!\n");
 					
 					for (int i = 0; i < 10000; i++){
@@ -208,7 +223,7 @@ int main(int argc, char** argv)
 				blue();
 
                                 if (strcmp(operation, "Thread") == 0){
-					pid_t process1;
+					pid_t process1 = 0;
                                         sscanf(buffer1, "%*s %ld %d", &incoming_thread, &process1);
 					printf("Started Session with Client 2. Thread ID is %ld\n", incoming_thread);
                                         thread_track[1] = incoming_thread;
@@ -232,7 +247,7 @@ int main(int argc, char** argv)
                                 }
 
                                 if (strcmp(operation, "Dealloc") == 0){
-                                        int dealloc_id;
+                                        int dealloc_id = 0;
                                         printf("Recieved Dealloc Message from Client 2!\n");
                                         sscanf(buffer1, "%*s %d", &dealloc_id);
                                         if (warehouse[dealloc_id].is_valid == 1){
@@ -245,8 +260,8 @@ int main(int argc, char** argv)
                                 }
 
                                 if (strcmp(operation, "Read") == 0){
-                                        int read_id;
-                                        char buff3[100];
+                                        int read_id = 0;
+                                        char buff3[100] = {0};
                                         printf("Recieved Read Message from Client 2!\n");
                                         sscanf(buffer1, "%*s %d", &read_id);
                                         if (warehouse[read_id].is_valid == 1){
@@ -261,9 +276,9 @@ int main(int argc, char** argv)
                                 }
 
                                 if (strcmp(operation, "Store") == 0){
-                                        int store_id; 
-                                        char buff4[100];
-					char buff5[100];
+                                        int store_id = 0;
+                                        char buff4[100] = {0};
+					char buff5[100] = {0};
                                         printf("Recieved Store Message from Client 2!\n");
                                         sscanf(buffer1, "%*s %d \"%[^\"]\"", &store_id, buff4);
                                         if (warehouse[store_id].is_valid == 1){
@@ -280,8 +295,8 @@ int main(int argc, char** argv)
                                 }
         
                                 if (strcmp(operation, "Close") == 0){
-                                        pthread_t thread_to_delete;
-                                        char buff3[100];
+                                        pthread_t thread_to_delete = 0;
+                                        char buff3[100] = {0};
                                         printf("Recieved Close Message from Client 2!\n");
                                         sscanf(buffer1, "%*s %ld", &thread_to_delete);
                         
@@ -296,9 +311,9 @@ int main(int argc, char** argv)
                                 }
 				
 				if (strcmp(operation, "Exit") == 0){
-                                         pthread_t thread_to_delete;
-                                         pid_t process_to_delete;
-                                         char buf6[100];
+                                         pthread_t thread_to_delete = 0;
+                                         pid_t process_to_delete = 0;
+                                         char buf6[100] = {0};
                                          printf("Recieved Exit Message from Client 2!\n");
                                  
                                          for (int i = 0; i < 10000; i++){
@@ -322,7 +337,7 @@ int main(int argc, char** argv)
 				green();
 
                                 if (strcmp(operation, "Thread") == 0){
-					pid_t process1;
+					pid_t process1 = 0;
                                         sscanf(buffer1, "%*s %ld %d", &incoming_thread, &process1);
 					printf("Started Session with Client 3. Thread ID is %ld\n", incoming_thread);
                                         thread_track[2] = incoming_thread;
@@ -346,7 +361,7 @@ int main(int argc, char** argv)
                                 }
 
                                 if (strcmp(operation, "Dealloc") == 0){
-                                        int dealloc_id;
+                                        int dealloc_id = 0;
                                         printf("Recieved Dealloc Message from Client 3!\n");
                                         sscanf(buffer1, "%*s %d", &dealloc_id);
                                         if (warehouse[dealloc_id].is_valid == 1){
@@ -359,8 +374,8 @@ int main(int argc, char** argv)
                                 }
 
                                 if (strcmp(operation, "Read") == 0){
-                                        int read_id;
-                                        char buff3[100];
+                                        int read_id = 0;
+                                        char buff3[100] = {0};
                                         printf("Recieved Read Message from Client 3!\n");
                                         sscanf(buffer1, "%*s %d", &read_id);
                                         if (warehouse[read_id].is_valid == 1){
@@ -375,9 +390,9 @@ int main(int argc, char** argv)
                                 }
 
                                 if (strcmp(operation, "Store") == 0){
-                                        int store_id; 
-                                        char buff4[100];
-					char buff5[100];
+                                        int store_id = 0;
+                                        char buff4[100] = {0};
+					char buff5[100] = {0};
                                         printf("Recieved Store Message from Client 3!\n");
                                         sscanf(buffer1, "%*s %d \"%[^\"]\"", &store_id, buff4);
                                         if (warehouse[store_id].is_valid == 1){
@@ -394,8 +409,8 @@ int main(int argc, char** argv)
                                 }
         
                                 if (strcmp(operation, "Close") == 0){
-                                        pthread_t thread_to_delete;
-                                        char buff3[100];
+                                        pthread_t thread_to_delete = 0;
+                                        char buff3[100] = {0};
                                         printf("Recieved Close Message from Client 3!\n");
                                         sscanf(buffer1, "%*s %ld", &thread_to_delete);
                         
@@ -410,8 +425,8 @@ int main(int argc, char** argv)
                                 }
 				
 				if (strcmp(operation, "Exit") == 0){
-                                         pthread_t thread_to_delete;
-                                         pid_t process_to_delete;
+                                         pthread_t thread_to_delete = 0;
+                                         pid_t process_to_delete = 0;
                                          char buf6[100];
                                          printf("Recieved Exit Message from Client 1!\n");
                                  
@@ -435,7 +450,7 @@ int main(int argc, char** argv)
 				yellow();
 
                                 if (strcmp(operation, "Thread") == 0){
-					pid_t process1;
+					pid_t process1 = 0;
                                         sscanf(buffer1, "%*s %ld %d", &incoming_thread, &process1);
                                         printf("Started Session with Client 4. Thread ID is %ld\n", incoming_thread);
                                         thread_track[3] = incoming_thread;
@@ -447,11 +462,11 @@ int main(int argc, char** argv)
                                         printf("Recieved Alloc Message from Client 4!\n");
                                         for (int i = 0; i < warehouse_size; i++){
                                                 if (warehouse[i].is_valid == 0){
-                                                        char buf3 [100];
+                                                        char buf3 [100] = {0};
                                                         sprintf(buf3, "%d", i);
                                                         write(client_fifo4, buf3, 100*sizeof(char));
                                                         warehouse[i].is_valid = 1;
-                                                        warehouse[i].thread_id = thread_track[0];
+                                                        warehouse[i].thread_id = thread_track[3];
                                                         printf("Space Allocated at %d for Client 4\n", i);
                                                         break;
                                                 }
@@ -459,7 +474,7 @@ int main(int argc, char** argv)
                                 }
 
                                 if (strcmp(operation, "Dealloc") == 0){
-                                        int dealloc_id;
+                                        int dealloc_id = 0;
                                         printf("Recieved Dealloc Message from Client 4!\n");
                                         sscanf(buffer1, "%*s %d", &dealloc_id);
                                         if (warehouse[dealloc_id].is_valid == 1){
@@ -472,8 +487,8 @@ int main(int argc, char** argv)
                                 }
 
                                   if (strcmp(operation, "Read") == 0){
-                                        int read_id;
-                                        char buff3[100];
+                                        int read_id = 0;
+                                        char buff3[100] = {0};
                                         printf("Recieved Read Message from Client 4\n");
                                         sscanf(buffer1, "%*s %d", &read_id);
                                         if (warehouse[read_id].is_valid == 1){
@@ -488,9 +503,9 @@ int main(int argc, char** argv)
                                 }
 
                                  if (strcmp(operation, "Store") == 0){
-                                        int store_id; 
-                                        char buff4[100];
-                                        char buff5[100];
+                                        int store_id = 0;
+                                        char buff4[100] = {0};
+                                        char buff5[100] = {0};
                                         printf("Recieved Store Message from Client 4\n");
                                         sscanf(buffer1, "%*s %d \"%[^\"]\"", &store_id, buff4);
                                         if (warehouse[store_id].is_valid == 1){
@@ -507,8 +522,8 @@ int main(int argc, char** argv)
                                 }
         
                                 if (strcmp(operation, "Close") == 0){
-                                        pthread_t thread_to_delete;
-                                        char buff3[100];
+                                        pthread_t thread_to_delete = 0;
+                                        char buff3[100] = {0};
                                         printf("Recieved Close Message from Client 4!\n");
                                         sscanf(buffer1, "%*s %ld", &thread_to_delete);
                         
@@ -523,9 +538,9 @@ int main(int argc, char** argv)
                                 }
 
 				if (strcmp(operation, "Exit") == 0){
-                                         pthread_t thread_to_delete;
-                                         pid_t process_to_delete;
-                                         char buf6[100];
+                                         pthread_t thread_to_delete = 0;
+                                         pid_t process_to_delete = 0;
+                                         char buf6[100] = {0};
                                          printf("Recieved Exit Message from Client 1!\n");
                                  
                                          for (int i = 0; i < 10000; i++){
