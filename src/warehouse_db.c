@@ -199,10 +199,10 @@ int main(int argc, char** argv)
 				
 				if (strcmp(operation, "Exit") == 0){
 					pthread_t thread_to_delete = 0;
-					pid_t process_to_delete = 0;
 					char buf6[100] = {0};
 					printf("Recieved Exit Message from Client 1!\n");
-					
+					sscanf(buffer1, "%*s %ld", &thread_to_delete);				       
+	
 					for (int i = 0; i < 10000; i++){
                                                  if (warehouse[i].thread_id == thread_to_delete){
                                                          warehouse[i].thread_id = 0;
@@ -315,7 +315,8 @@ int main(int argc, char** argv)
                                          pid_t process_to_delete = 0;
                                          char buf6[100] = {0};
                                          printf("Recieved Exit Message from Client 2!\n");
-                                 
+                                         sscanf(buffer1, "%*s %ld", &thread_to_delete); 
+
                                          for (int i = 0; i < 10000; i++){
                                                   if (warehouse[i].thread_id == thread_to_delete){
                                                           warehouse[i].thread_id = 0;
@@ -426,10 +427,10 @@ int main(int argc, char** argv)
 				
 				if (strcmp(operation, "Exit") == 0){
                                          pthread_t thread_to_delete = 0;
-                                         pid_t process_to_delete = 0;
                                          char buf6[100];
                                          printf("Recieved Exit Message from Client 1!\n");
-                                 
+                                	 sscanf(buffer1, "%*s %ld", &thread_to_delete); 
+ 
                                          for (int i = 0; i < 10000; i++){
                                                   if (warehouse[i].thread_id == thread_to_delete){
                                                           warehouse[i].thread_id = 0;
@@ -539,10 +540,9 @@ int main(int argc, char** argv)
 
 				if (strcmp(operation, "Exit") == 0){
                                          pthread_t thread_to_delete = 0;
-                                         pid_t process_to_delete = 0;
                                          char buf6[100] = {0};
                                          printf("Recieved Exit Message from Client 1!\n");
-                                 
+                                	 sscanf(buffer1, "%*s %ld", &thread_to_delete);  
                                          for (int i = 0; i < 10000; i++){
                                                   if (warehouse[i].thread_id == thread_to_delete){
                                                           warehouse[i].thread_id = 0;
@@ -605,7 +605,10 @@ void handler1(int sig)
 				printf("List of Entries by Client %ld\n", temp_id);
 				for (int i = 0; i < 10000; i++){
 					if (warehouse[i].thread_id == temp_id && warehouse[i].is_valid == 1){
-						printf("%s\n", warehouse[i].attr_name);
+						printf("ID\tAttribute Name\tIs Valid\n");
+						printf("%ld\t", warehouse[i].thread_id);
+						printf("%s\t", warehouse[i].attr_name);
+						printf("%d\t", warehouse[i].is_valid);
 					}
 				}				
 			}
@@ -614,6 +617,7 @@ void handler1(int sig)
 
 		if (strcmp(array[0], "dump") == 0){
 			for (int i = 0; i < warehouse_size; i++){
+				printf("Index: %d\t", i);
 				printf("Warehouse Record ID: %ld\t", warehouse[i].thread_id);
 				printf("Warehouse Record Name: %s\t", warehouse[i].attr_name);
 				printf("Warehouse Record Valid: %d\n", warehouse[i].is_valid);

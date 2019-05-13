@@ -262,7 +262,7 @@ int main(int argc, char** argv)
 				int physical_address = main_array[first_level].pointSecond[second_level].physical_address;
 				
 				int foundCache = inCache(physical_address);
-				printf("FOUND CACHE: %d\n", foundCache);
+				//printf("FOUND CACHE: %d\n", foundCache);
 				if (foundCache > -1){
 					printf("cache found\n");
 					strcpy(buffCache, cache_array[foundCache].warehouse_attr);
@@ -391,7 +391,7 @@ int main(int argc, char** argv)
                         	cache_array[i].warehouse_physical = -1;
                         	strcpy(cache_array[i].warehouse_attr, "");
                         }
-			sprintf(buff9, "Exit %ld %d", thread_id, getpid());
+			sprintf(buff9, "Exit %ld", thread_id);
 			write(server_fifo, buff9, 100*sizeof(char));
 			thread_close = 0;
 			start_control--;
@@ -435,8 +435,7 @@ char *strlwr(char *str)
 }
 
 void handler1(int sig){
-	write(1, "Server has been closed. Client will now be shut", 50);
-	write(1, "\n", 10);
+	write(1, "Server has been closed. Client will now be shut\n", 48);
 	for (int i = 0; i < 16; i++){
 		main_array[i].is_occupied1 = 0;
 		for (int j = 0; j < 4; j++){
@@ -453,7 +452,7 @@ void handler1(int sig){
 // Add to Cache
 // Default cache value is -1
 int addToCache(int warehouse_physical, char warehouse_attr[]){
-	printf("ADD TO CACHE\n");
+	//printf("ADD TO CACHE\n");
 	int i = 0;
 	int miss_evict = 0;
 	for (i = 0; i < 4; i++){
